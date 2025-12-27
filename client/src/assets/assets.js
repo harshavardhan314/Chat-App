@@ -82,7 +82,7 @@ export const userDummyData = [
 
 export const messagesDummyData = [
     {
-        "_id": "680f571ff10f3cd28382f094",
+        "_id": " 680f571ff10f3cd28382f094",
         "senderId": "680f5116f10f3cd28382ed02",
         "receiverId": "680f50e4f10f3cd28382ecf9",
         "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
