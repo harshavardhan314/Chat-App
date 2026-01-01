@@ -11,8 +11,6 @@ const LoginPage = () => {
 
   const onSubmitHandler = (event) => {
     event.preventDefault();
-
-    // Step-1 of signup → move to bio
     if (currState === "Sign up" && !isDataSubmitted) {
       setIsDataSubmitted(true);
       return;
