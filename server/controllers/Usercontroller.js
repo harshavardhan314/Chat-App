@@ -1,38 +1,54 @@
-import user from '../models/UserModel.js';
+import { User } from '../models/UserModel.js';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../lib/utils.js';
 
 
 // User Signup Controller
-export const signup=async(req,res)=>{
-    try{
-        const {name,email,password,bio}=req.body;
+export const signup = async (req, res) => {
+  try {
+    const { name, email, password, bio } = req.body;
 
-        if (!name || !email || !password || !bio) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-        const user = await user.findOne({ email });
-        if (user) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-        const salt=await bcrypt.genSalt(10);// this will generate a random string to the password
-        const hashedPassword=await bcrypt.hash(password,salt); // this will hash the password with the salt
-        const newUser = await user.create({
-            name,
-            email,
-            password: hashedPassword,
-            bio
-        });
-
-        const token=generateToken(newUser._id);
-
-        res.json({success:true,user:newUser,token,message:"User created successfully"});
+    if (!name || !email || !password || !bio) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-    catch(error){
-        console.error("Error during signup:", error);
-        res.json({success:false,message: "Server error", error: error.message });
+
+    // ✅ Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
     }
-}
+
+    // ✅ Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // ✅ Create user
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      bio
+    });
+
+    // ✅ Generate token
+    const token = generateToken(newUser._id);
+
+    res.status(201).json({
+      success: true,
+      user: newUser,
+      token,
+      message: "User created successfully"
+    });
+  } catch (error) {
+    console.error("Error during signup:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
 
 // Login Controller
 export const login=async(req,res)=>{
@@ -57,4 +73,35 @@ export const login=async(req,res)=>{
         console.error("Error during login:", error);
         res.json({success:false,message: "Server error", error: error.message });
     }
+}
+
+export const checkauth=(req,res)=>{
+    res.status(200).json({message:"Authenticated",user:req.user});
+}
+
+
+export const updateProfile=async(req,res)=>{
+    try{
+        const { ProfilePic,bio,fullName}=req.body;
+        const userId=req.user._id;
+        let updatedUser;
+        if(!ProfilePic){
+            updatedUser=await user.findByIdAndUpdate(userId,{
+                bio,
+                fullName
+            },{new:true});
+        }
+        else{
+            const upload=await cloudinary.uploader.upload(ProfilePic);
+            updatedUser=await user.findByIdAndUpdate(userId,{ProfilePic:upload.secure_url,
+                bio,
+                fullName
+            },{new:true});
+        }
+        res.json({success:true,user:updatedUser,message:"Profile updated successfully"});
+    }   
+    catch(error){
+        console.error("Error during profile update:", error);
+        res.json({success:false,message: "Server error", error: error.message });
+    }   
 }
