@@ -1,110 +1,149 @@
-import  User  from '../models/UserModel.js';
-import bcrypt from 'bcryptjs';
-import { generateToken } from '../lib/utils.js';
+import User from "../models/UserModel.js";
+import bcrypt from "bcryptjs";
+import { generateToken } from "../lib/utils.js";
+import cloudinary from "../lib/cloudinary.js"; // ✅ REQUIRED
 
-
-// User Signup Controller
+/* ===================== SIGNUP ===================== */
 export const signup = async (req, res) => {
   try {
-    const { name, email, password, bio } = req.body;
+    const { fullName, email, password, bio } = req.body;
 
-    if (!name || !email || !password || !bio) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!fullName || !email || !password || !bio) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
 
-  
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
     }
 
-    //  Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    //  Create user
     const newUser = await User.create({
-      name,
+      fullName,
       email,
       password: hashedPassword,
-      bio
+      bio,
     });
 
-    //  Generate token
     const token = generateToken(newUser._id);
 
     res.status(201).json({
       success: true,
       user: newUser,
       token,
-      message: "User created successfully"
+      message: "User created successfully",
     });
   } catch (error) {
-    console.error("Error during signup:", error);
+    console.error("Signup error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
-      error: error.message
     });
   }
 };
 
+/* ===================== LOGIN ===================== */
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-// Login Controller
-export const login=async(req,res)=>{
-    try{
-        const {email,password}=req.body;
-        if(!email || !password){
-            return res.status(400).json({message:"All fields are required"});
-        }
-        const existingUser = await user.findOne({email});
-        if(!existingUser){
-            return res.status(400).json({message:"User does not exist"});
-        }
-
-        const isPasswordValid=await bcrypt.compare(password,existingUser.password);
-        if(!isPasswordValid){
-            return res.status(400).json({message:"Invalid credentials"});
-        }
-        const token=generateToken(existingUser._id);
-        res.json({success:true,user:existingUser,token,message:"Login successful"});
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
-    catch(error){
-        console.error("Error during login:", error);
-        res.json({success:false,message: "Server error", error: error.message });
+
+    const existingUser = await User.findOne({ email }); // ✅ FIXED
+    if (!existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User does not exist",
+      });
     }
-}
 
-export const checkauth=(req,res)=>{
-    res.status(200).json({message:"Authenticated",user:req.user});
-}
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
 
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
 
-export const updateProfile=async(req,res)=>{
-    try{
-        const { ProfilePic,bio,fullName}=req.body;
-        const userId=req.user._id;
-        let updatedUser;
+    const token = generateToken(existingUser._id);
 
+    res.json({
+      success: true,
+      user: existingUser,
+      token,
+      message: "Login successful",
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
 
-        if(!ProfilePic){
-            updatedUser=await User.findByIdAndUpdate(userId,{
-                bio,
-                fullName
-            },{new:true});
-        }
-        else{
-            const upload=await cloudinary.uploader.upload(ProfilePic);
-            updatedUser=await User.findByIdAndUpdate(userId,{ProfilePic:upload.secure_url,
-                bio,
-                fullName
-            },{new:true});
-        }
-        res.json({success:true,user:updatedUser,message:"Profile updated successfully"});
-    }   
-    catch(error){
-        console.error("Error during profile update:", error);
-        res.json({success:false,message: "Server error", error: error.message });
-    }   
-}
+/* ===================== CHECK AUTH ===================== */
+export const checkauth = (req, res) => {
+  res.status(200).json({
+    success: true, // ✅ REQUIRED
+    user: req.user,
+  });
+};
 
+/* ===================== UPDATE PROFILE ===================== */
+export const updateProfile = async (req, res) => {
+  try {
+    const { profilePic, bio, fullName } = req.body;
+    const userId = req.user._id;
+
+    let updatedUser;
+
+    if (!profilePic) {
+      updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { bio, fullName },
+        { new: true }
+      );
+    } else {
+      const upload = await cloudinary.uploader.upload(profilePic);
+
+      updatedUser = await User.findByIdAndUpdate(
+        userId,
+        {
+          profilePic: upload.secure_url,
+          bio,
+          fullName,
+        },
+        { new: true }
+      );
+    }
+
+    res.json({
+      success: true,
+      user: updatedUser,
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
