@@ -1,12 +1,15 @@
 
 import express from "express";
-import {  login, signup } from "../controllers/Usercontroller.js";
+import { signup, login, updateProfile, checkauth } from "../controllers/UserControllers.js";
+import { authenticate } from "../middleware/auth.js";
 
 const userRouter=express.Router();
 
 
 userRouter.post("/signup",signup);
 userRouter.post("/login",login);
+userRouter.put("/updateProfile",authenticate,updateProfile);
+userRouter.get("/checkauth",authenticate,checkauth);
 
 
 
