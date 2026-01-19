@@ -14,16 +14,30 @@ const LoginPage = () => {
 
   const {login} = useContext(AuthContext);
 
-  const onSubmitHandler = (event) => {
-    event.preventDefault();
-    if (currState === "Sign up" && !isDataSubmitted) {
-      setIsDataSubmitted(true);
-      return;
-    }
+const onSubmitHandler = (event) => {
+          event.preventDefault();
+          
+        if (currState === "Sign up" && !isDataSubmitted) {
+          if (!fullName || !email || !password) {
+            return toast.error("Please fill all fields");
+          }
+          setIsDataSubmitted(true);
+          return;
+        }
 
-    console.log({ fullName, email, password, bio });
-    login(currState==="Sign up" ? "signup" : "login",{  fullName, email, password, bio });
-  };
+        
+        if (currState === "Sign up" && !bio) {
+          return toast.error("Bio is required");
+        }
+
+        if (currState === "Sign up") {
+          login("signup", { fullName, email, password, bio });
+        } 
+        else {
+          login("login", { email, password });
+        }
+};
+
 
   return (
     <div className="min-h-screen bg-cover bg-center flex items-center justify-center gap-6 sm:justify-evenly max-sm:flex-col backdrop-blur-2xl">

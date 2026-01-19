@@ -1,131 +1,101 @@
 import { createContext, useEffect, useState } from "react";
-import axios from "axios";
-import toast from "react-hot-toast";
+import axiosLib from "axios";
 import { io } from "socket.io-client";
+import toast from "react-hot-toast";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
-axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [authUser, setAuthUser] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [socket, setSocket] = useState(null);
 
-  /* ===================== CHECK AUTH ===================== */
+  const axios = axiosLib.create({ baseURL: backendUrl });
+
+  // Attach JWT to requests
+  axios.interceptors.request.use((config) => {
+    const t = localStorage.getItem("token");
+    if (t) config.headers.Authorization = `Bearer ${t}`;
+    return config;
+  });
+
   const checkAuth = async () => {
+    if (!token) return;
     try {
       const { data } = await axios.get("/api/auth/check");
       if (data.success) {
         setAuthUser(data.user);
         connectSocket(data.user);
+      } else {
+        logout();
       }
-    } catch (error) {
-      console.log("Error in checkAuth", error);
+    } catch {
+      logout();
     }
   };
 
-  /* ===================== LOGIN / SIGNUP ===================== */
-  const login = async (state, credentials) => {
+  const login = async (type, credentials) => {
     try {
-      const { data } = await axios.post(`/api/auth/${state}`, credentials);
-
-      if (!data.success) {
-        toast.error(data.message);
-        return;
-      }
+      const { data } = await axios.post(`/api/auth/${type}`, credentials);
+      if (!data.success) return toast.error(data.message);
 
       setAuthUser(data.user);
       setToken(data.token);
-
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${data.token}`;
-
       localStorage.setItem("token", data.token);
 
       connectSocket(data.user);
       toast.success(data.message);
-    } catch (error) {
-      console.log("Error in login", error);
-      toast.error(error.response?.data?.message || "Authentication failed");
+    } catch {
+      toast.error("Authentication failed");
     }
   };
 
-  /* ===================== LOGOUT ===================== */
   const logout = () => {
-    setAuthUser(null);
-    setToken(null);
-    setOnlineUsers([]);
-
     localStorage.removeItem("token");
-    delete axios.defaults.headers.common["Authorization"];
-
+    setToken(null);
+    setAuthUser(null);
+    setOnlineUsers([]);
     socket?.disconnect();
-    setSocket(null);
-
-    toast.success("Logged out successfully");
   };
 
-  /* ===================== UPDATE PROFILE ===================== */
   const updateProfile = async (body) => {
     try {
       const { data } = await axios.put("/api/auth/updateProfile", body);
-
       if (data.success) {
         setAuthUser(data.user);
         toast.success(data.message);
-      } else {
-        toast.error(data.message);
       }
-    } catch (error) {
-      console.log("Error in updateProfile", error);
-      toast.error(error.response?.data?.message || "Update failed");
+    } catch {
+      toast.error("Profile update failed");
     }
   };
 
-  /* ===================== SOCKET ===================== */
-  const connectSocket = (userData) => {
-    if (!userData || socket?.connected) return;
+  const connectSocket = (user) => {
+    if (!user || socket?.connected) return;
 
-    const newSocket = io(backendUrl, {
-      query: { userId: userData._id },
-    });
-
+    const newSocket = io(backendUrl, { query: { userId: user._id } });
+    newSocket.on("online-users", setOnlineUsers);
     setSocket(newSocket);
-
-    newSocket.on("online-users", (userIds) => {
-      setOnlineUsers(userIds);
-    });
   };
 
-  /* ===================== RESTORE TOKEN ON REFRESH ===================== */
-  useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-
-    if (savedToken) {
-      setToken(savedToken);
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${savedToken}`;
-      checkAuth();
-    }
-  }, []);
-
-  const value = {
-    authUser,
-    token,
-    onlineUsers,
-    socket,
-    login,
-    logout,
-    updateProfile,
-  };
+  useEffect(() => { checkAuth(); }, [token]);
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        axios,
+        authUser,
+        token,
+        onlineUsers,
+        socket,
+        login,
+        logout,
+        updateProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

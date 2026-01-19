@@ -1,7 +1,7 @@
 import React from 'react'
 import Sidebar from '../components/Sidebar'
-import ChatContainer from '../components/ChatContainer'
 import RightSidebar from '../components/RightSidebar'
+import ChatContainer from '../components/ChatContainer'
 import { useState } from 'react'
 const HomePage = () => {
 
@@ -15,8 +15,8 @@ const HomePage = () => {
             : "md:grid-cols-2"
         }`}
       >
-        <Sidebar  selectedUser={selectedUser} setSelectedUser={setSelectedUser}/>
-        <ChatContainer   selectedUser={selectedUser} setSelectedUser={setSelectedUser}/>
+        <Sidebar  />
+       <ChatContainer></ChatContainer>
         <RightSidebar  selectedUser={selectedUser} setSelectedUser={setSelectedUser} />
       </div>
     </div>
