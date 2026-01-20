@@ -18,22 +18,33 @@ const ProfilePage = () => {
     }
   }, [authUser]);
 
-        const handleSubmit = async (e) => {
-              e.preventDefault();
-              if (!selectedImg) {
-                await updateProfile({ fullName: name, bio });
-                navigate("/");
-                return;
-              }
+       const handleSubmit = async (e) => {
+  e.preventDefault();
 
-            const reader = new FileReader();
-            reader.readAsDataURL(selectedImg);
-            reader.onload = async () => {
-              const base64Image = reader.result;
-              await updateProfile({ profilePic: base64Image, fullName: name, bio });
-              navigate("/");
-    };
+  // If no new image selected OR image is already a string
+  if (!selectedImg || !(selectedImg instanceof File)) {
+    await updateProfile({
+      fullName: name,
+      bio,
+    });
+    navigate("/");
+    return;
+  }
+
+  // Only runs when selectedImg is a File
+  const reader = new FileReader();
+  reader.readAsDataURL(selectedImg);
+
+  reader.onload = async () => {
+    const base64Image = reader.result;
+    await updateProfile({
+      profilePic: base64Image,
+      fullName: name,
+      bio,
+    });
+    navigate("/");
   };
+};
 
   return (
     <div className="min-h-screen bg-cover bg-no-repeat flex items-center justify-center">
