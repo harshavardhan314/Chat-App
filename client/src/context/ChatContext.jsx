@@ -12,9 +12,9 @@ export const ChatProvider = ({ children }) => {
 
   const { socket, axios, authUser } = useContext(AuthContext);
 
-  // ---------------- GET USERS ----------------
+ 
   const getUsers = async () => {
-    if (!authUser) return; // 🔥 wait for auth
+    if (!authUser) return;
 
     try {
       const { data } = await axios.get("/api/messages/users");
@@ -23,16 +23,12 @@ export const ChatProvider = ({ children }) => {
         setUnseenMessages(data.unseenmessageCounts || {});
       }
     } catch (err) {
-      console.error(
-        "Error in getUsers:",
-        err.response?.status,
-        err.response?.data || err.message
-      );
+      console.error("getUsers error:", err);
       toast.error("Failed to load users");
     }
   };
 
-  // ---------------- GET MESSAGES ----------------
+  
   const getMessages = async (userId) => {
     if (!userId) return;
 
@@ -40,26 +36,14 @@ export const ChatProvider = ({ children }) => {
       const { data } = await axios.get(`/api/messages/${userId}`);
       if (data.success) {
         setMessages(data.messages || []);
-
-        // 🔥 Clear unseen locally
-        setUnseenMessages((prev) => ({
-          ...prev,
-          [userId]: 0,
-        }));
-      } else {
-        toast.error(data.message || "Failed to load messages");
       }
     } catch (err) {
-      console.error(
-        "Error in getMessages:",
-        err.response?.status,
-        err.response?.data || err.message
-      );
+      console.error("getMessages error:", err);
       toast.error("Failed to load messages");
     }
   };
 
-  // ---------------- SEND MESSAGE ----------------
+  
   const sendMessage = async (messageData) => {
     if (!selectedUser?._id) return;
 
@@ -70,32 +54,48 @@ export const ChatProvider = ({ children }) => {
       );
 
       if (data.success) {
-        setMessages((prev) => [...prev, data.message || data.newMessage]);
+        setMessages((prev) => [...prev, data.newMessage || data.message]);
       } else {
-        toast.error(data.message || "Failed to send message");
+        toast.error(data.message);
       }
     } catch (err) {
-      console.error(
-        "Error in sendMessage:",
-        err.response?.data || err.message
-      );
+      console.error("sendMessage error:", err);
       toast.error("Failed to send message");
     }
   };
 
-  // ---------------- SOCKET LISTENER ----------------
+  
+
+ 
+  useEffect(() => {
+    if (!selectedUser) return;
+
+   
+    getMessages(selectedUser._id);
+
+    
+    axios.put(`/api/messages/mark/${selectedUser._id}`).catch(console.error);
+
+    
+    setUnseenMessages((prev) => ({
+      ...prev,
+      [selectedUser._id]: 0,
+    }));
+  }, [selectedUser]);
+
+ 
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = (msg) => {
-      // If current chat is open
+     
       if (selectedUser && msg.senderId === selectedUser._id) {
         setMessages((prev) => [...prev, { ...msg, seen: true }]);
 
-        // 🔥 mark seen in backend
-        axios.put(`/api/messages/mark/${msg._id}`).catch(console.error);
-      } else {
-        // Increase unseen count
+        axios.put(`/api/messages/mark/${msg.senderId}`).catch(console.error);
+      }
+     
+      else {
         setUnseenMessages((prev) => ({
           ...prev,
           [msg.senderId]: (prev[msg.senderId] || 0) + 1,
@@ -107,7 +107,8 @@ export const ChatProvider = ({ children }) => {
     return () => socket.off("new-message", handleNewMessage);
   }, [socket, selectedUser, axios]);
 
-  // ---------------- LOAD USERS AFTER LOGIN ----------------
+  
+
   useEffect(() => {
     if (authUser) getUsers();
   }, [authUser]);
