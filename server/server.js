@@ -10,21 +10,33 @@ import { Server } from "socket.io";
 const app = express();
 const server = http.createServer(app);
 
-/* ===================== CORS ===================== */
+
+const allowedOrigins = [
+  "http://localhost:5173", // local frontend
+  "https://chat-app-frontend-pwh5.onrender.com" // deployed frontend
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow Postman, mobile apps
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
-/* ===================== MIDDLEWARE ===================== */
+
 app.use(express.json({ limit: "4mb" }));
 
-/* ===================== SOCKET.IO ===================== */
+
 export const io = new Server(server, {
-  cors: { origin: "http://localhost:5173", credentials: true },
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
 });
 
 export const onlineUsers = {};
@@ -42,16 +54,15 @@ io.on("connection", (socket) => {
   });
 });
 
-/* ===================== ROUTES ===================== */
+
 app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
-/* ===================== STATUS CHECK ===================== */
+
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "Server is running" });
 });
 
-/* ===================== START SERVER ===================== */
 const PORT = process.env.PORT || 5000;
 await connectDB();
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
