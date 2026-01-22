@@ -38,7 +38,7 @@ export const signup = async (req, res) => {
   }
 };
 
-/* ===================== LOGIN ===================== */
+// login user
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -64,12 +64,12 @@ export const login = async (req, res) => {
   }
 };
 
-/* ===================== CHECK AUTH ===================== */
+// check authentication
 export const checkauth = (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
-/* ===================== UPDATE PROFILE ===================== */
+// update user profile
 
 export const updateProfile = async (req, res) => {
   try {

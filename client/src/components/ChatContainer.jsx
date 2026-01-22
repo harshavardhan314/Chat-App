@@ -12,7 +12,7 @@ const ChatContainer = () => {
   const [input, setInput] = useState("");
   const scrollEnd = useRef();
 
-  // ---------- send text message ----------
+  //  send text message 
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!input.trim()) return;
@@ -20,7 +20,7 @@ const ChatContainer = () => {
     setInput("");
   };
 
-  // ---------- send image ----------
+  //  send image 
   const handleSendImage = async (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) return toast.error("Select a valid image");
@@ -33,12 +33,12 @@ const ChatContainer = () => {
     reader.readAsDataURL(file);
   };
 
-  // ---------- fetch messages ----------
+  // fetch messages when selected user changes
   useEffect(() => {
     if (selectedUser?._id) getMessages(selectedUser._id);
   }, [selectedUser]);
 
-  // ---------- scroll ----------
+  // scroll to bottom when messages change
   useEffect(() => {
     if (scrollEnd.current && messages) scrollEnd.current.scrollIntoView({ behavior: "smooth" });
   }, [messages]);

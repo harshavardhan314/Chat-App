@@ -4,7 +4,7 @@ import cloudinary from "../lib/cloudinary.js";
 import mongoose from "mongoose";
 import { io, onlineUsers } from "../server.js";
 
-// ------------------ GET USERS FOR SIDEBAR ------------------
+// get users for sidebar with unseen message counts
 export const getUserForSidebar = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -29,7 +29,7 @@ export const getUserForSidebar = async (req, res) => {
   }
 };
 
-// ------------------ GET MESSAGES ------------------
+// get messages between logged-in user and selected user
 export const getMessages = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -50,7 +50,7 @@ export const getMessages = async (req, res) => {
   }
 };
 
-// ------------------ MARK MESSAGE AS SEEN ------------------
+// mark a message as seen by ID
 export const markMessagesAsSeen = async (req, res) => {
   try {
     const id = req.params.id;
@@ -63,7 +63,7 @@ export const markMessagesAsSeen = async (req, res) => {
   }
 };
 
-// ------------------ SEND MESSAGE ------------------
+// send a message to a user
 export const sendMessage = async (req, res) => {
   try {
     const senderId = req.user._id;
