@@ -1,4 +1,4 @@
-# Chat-app
+# QuickChat
 
 A real-time chat application built with **MongoDB, Express, React, Node.js (MERN)** and **Socket.IO**.  
 Supports direct messaging, seen/unseen messages, online user tracking, and deployable on **Render**.
