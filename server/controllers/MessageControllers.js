@@ -55,6 +55,7 @@ export const markMessagesAsSeen = async (req, res) => {
   try {
     const id = req.params.id;
     await Message.findByIdAndUpdate(id, { seen: true });
+    console.log(`Message ${id} marked as seen`);
     res.json({ success: true, message: "Message marked as seen" });
   } catch (error) {
     console.error("Error in markMessagesAsSeen:", error);
