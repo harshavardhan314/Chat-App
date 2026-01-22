@@ -86,6 +86,4 @@ Built with modern web technologies to give you a smooth chatting experience! �
 
 **Made with ❤️ by [Harsha vardhan](https://github.com/harshavardhan314/portfolio)**
 
-[⬆ Back to Top](#table-of-contents)
-
 </div>
